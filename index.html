@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Peta Rute Jalan PKL</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+    
+    <style>
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        #map { height: 100vh; width: 100vw; }
+        
+        /* Sembunyikan panel teks instruksi jalan agar bersih */
+        .leaflet-routing-container { display: none !important; }
+
+        /* Gaya Legenda */
+        .info-legend {
+            background: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .legend-item { display: flex; align-items: center; margin-bottom: 4px; }
+        .line { height: 4px; width: 20px; margin-right: 10px; border-radius: 2px; }
+        h4 { margin: 0 0 8px 0; font-size: 14px; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+    
+    <script>
+        // 1. Inisialisasi Peta
+        const map = L.map('map').setView([-7.7, 110.5], 9);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        // 2. Data Rute Lengkap dengan Nama Tempat
+        const dataRute = {
+            "Hari 1": {
+                "warna": "#2196F3", // Biru
+                "titik": [
+                    {nama: "Kotabaru", coord: [-7.78621, 110.36915]},
+                    {nama: "Gumuk Pasir Parangkusumo", coord: [-8.01882, 110.31946]},
+                    {nama: "Watu Goyang", coord: [-7.92654, 110.412056]},
+                    {nama: "Tebing Ngingrong", coord: [-8.02755, 110.59057]},
+                    {nama: "Telaga Jonge", coord: [-8.011803, 110.624708]},
+                    {nama: "Dataran Fluviovulkan Weru", coord: [-7.812986, 110.758339]},
+                    {nama: "Wisma Colomadu (Menginap)", coord: [-7.537538, 110.757410]}
+                ]
+            },
+            "Hari 2": {
+                "warna": "#F44336", // Merah
+                "titik": [
+                    {nama: "Museum Sangiran", coord: [-7.45561, 110.83428]},
+                    {nama: "Alas Tuntang", coord: [-7.263543, 110.459335]},
+                    {nama: "Kampoeng Rawa", coord: [-7.27078, 110.42167]},
+                    {nama: "LP3S Salatiga (Menginap)", coord: [-7.352560, 110.512098]}
+                ]
+            },
+            "Hari 3": {
+                "warna": "#4CAF50", // Hijau
+                "titik": [
+                    {nama: "Pasar Kopeng", coord: [-7.3928, 110.423]},
+                    {nama: "Kaliputih Resto (Penutupan)", coord: [-7.60542, 110.30132]}
+                ]
+            }
+        };
+
+        // 3. Fungsi untuk menggambar rute mengikuti jalan raya
+        function gambarRuteJalan(hari, info) {
+            const waypoints = info.titik.map(t => L.latLng(t.coord[0], t.coord[1]));
+            
+            L.Routing.control({
+                waypoints: waypoints,
+                lineOptions: {
+                    styles: [{ color: info.warna, opacity: 0.7, weight: 5 }]
+                },
+                addWaypoints: false,
+                draggableWaypoints: false,
+                routeWhileDragging: false,
+                createMarker: function(i, wp) {
+                    // Menampilkan Nama Tempat pada setiap Marker (Pin)
+                    const tempat = info.titik[i];
+                    return L.marker(wp.latLng).bindPopup(`<b>${hari}</b><br>${tempat.nama}`);
+                }
+            }).addTo(map);
+        }
+
+        // 4. Jalankan untuk setiap hari
+        Object.keys(dataRute).forEach(hari => {
+            gambarRuteJalan(hari, dataRute[hari]);
+        });
+
+        // 5. Tambahkan Legenda di Pojok Kanan Atas
+        const legend = L.control({position: 'topright'});
+        legend.onAdd = function() {
+            const div = L.DomUtil.create('div', 'info-legend');
+            div.innerHTML = '<h4>Rencana Perjalanan</h4>';
+            Object.keys(dataRute).forEach(h => {
+                div.innerHTML += `
+                    <div class="legend-item">
+                        <span class="line" style="background-color:${dataRute[h].warna}"></span>
+                        ${h}
+                    </div>`;
+            });
+            return div;
+        };
+        legend.addTo(map);
+
+    </script>
+</body>
+</html>
