@@ -9,24 +9,20 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
     
     <style>
-        body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         #map { height: 100vh; width: 100vw; }
-        
-        /* Sembunyikan panel teks instruksi jalan agar bersih */
         .leaflet-routing-container { display: none !important; }
-
-        /* Gaya Legenda */
         .info-legend {
             background: white;
             padding: 10px 15px;
             border-radius: 8px;
             box-shadow: 0 0 15px rgba(0,0,0,0.2);
-            font-size: 13px;
-            line-height: 1.6;
+            font-size: 12px;
         }
         .legend-item { display: flex; align-items: center; margin-bottom: 4px; }
         .line { height: 4px; width: 20px; margin-right: 10px; border-radius: 2px; }
-        h4 { margin: 0 0 8px 0; font-size: 14px; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+        .dash { border-top: 3px dashed black; width: 20px; height: 0; margin-right: 10px; }
+        h4 { margin: 0 0 8px 0; font-size: 13px; border-bottom: 1px solid #eee; }
     </style>
 </head>
 <body>
@@ -37,17 +33,15 @@
     <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
     
     <script>
-        // 1. Inisialisasi Peta
         const map = L.map('map').setView([-7.7, 110.5], 9);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap'
         }).addTo(map);
 
-        // 2. Data Rute Lengkap dengan Nama Tempat
         const dataRute = {
             "Hari 1": {
-                "warna": "#2196F3", // Biru
+                "warna": "#2196F3",
                 "titik": [
                     {nama: "Kotabaru", coord: [-7.78621, 110.36915]},
                     {nama: "Gumuk Pasir Parangkusumo", coord: [-8.01882, 110.31946]},
@@ -59,7 +53,7 @@
                 ]
             },
             "Hari 2": {
-                "warna": "#F44336", // Merah
+                "warna": "#F44336",
                 "titik": [
                     {nama: "Museum Sangiran", coord: [-7.45561, 110.83428]},
                     {nama: "Alas Tuntang", coord: [-7.263543, 110.459335]},
@@ -68,7 +62,7 @@
                 ]
             },
             "Hari 3": {
-                "warna": "#FCBA03", // Kuning
+                "warna": "#fcba03",
                 "titik": [
                     {nama: "Pasar Kopeng", coord: [-7.3928, 110.423]},
                     {nama: "Kaliputih Resto (Penutupan)", coord: [-7.60542, 110.30132]}
@@ -76,47 +70,50 @@
             }
         };
 
-        // 3. Fungsi untuk menggambar rute mengikuti jalan raya
-        function gambarRuteJalan(hari, info) {
-            const waypoints = info.titik.map(t => L.latLng(t.coord[0], t.coord[1]));
-            
+        // Fungsi umum rute
+        function buatRute(coords, warna, dash = false) {
+            const styles = dash 
+                ? [{ color: 'black', opacity: 0.6, weight: 4, dashArray: '10, 10' }]
+                : [{ color: warna, opacity: 0.8, weight: 5 }];
+
             L.Routing.control({
-                waypoints: waypoints,
-                lineOptions: {
-                    styles: [{ color: info.warna, opacity: 0.7, weight: 5 }]
-                },
+                waypoints: coords.map(c => L.latLng(c[0], c[1])),
+                lineOptions: { styles: styles },
                 addWaypoints: false,
                 draggableWaypoints: false,
-                routeWhileDragging: false,
-                createMarker: function(i, wp) {
-                    // Menampilkan Nama Tempat pada setiap Marker (Pin)
-                    const tempat = info.titik[i];
-                    return L.marker(wp.latLng).bindPopup(`<b>${hari}</b><br>${tempat.nama}`);
-                }
+                createMarker: function() { return null; }
             }).addTo(map);
         }
 
-        // 4. Jalankan untuk setiap hari
+        // 1. Gambar Marker & Rute Utama
         Object.keys(dataRute).forEach(hari => {
-            gambarRuteJalan(hari, dataRute[hari]);
+            dataRute[hari].titik.forEach(t => {
+                L.marker(t.coord).bindPopup(`<b>${hari}</b><br>${t.nama}`).addTo(map);
+            });
+            buatRute(dataRute[hari].titik.map(t => t.coord), dataRute[hari].warna);
         });
 
-        // 5. Tambahkan Legenda di Pojok Kanan Atas
+        // 2. Gambar Rute Transisi (Hitam Putus-putus)
+        const h1_akhir = dataRute["Hari 1"].titik[dataRute["Hari 1"].titik.length - 1].coord;
+        const h2_awal = dataRute["Hari 2"].titik[0].coord;
+        buatRute([h1_akhir, h2_awal], null, true);
+
+        const h2_akhir = dataRute["Hari 2"].titik[dataRute["Hari 2"].titik.length - 1].coord;
+        const h3_awal = dataRute["Hari 3"].titik[0].coord;
+        buatRute([h2_akhir, h3_awal], null, true);
+
+        // 3. Legenda
         const legend = L.control({position: 'topright'});
         legend.onAdd = function() {
             const div = L.DomUtil.create('div', 'info-legend');
-            div.innerHTML = '<h4>Rencana Perjalanan</h4>';
+            div.innerHTML = '<h4>Legenda Rute</h4>';
             Object.keys(dataRute).forEach(h => {
-                div.innerHTML += `
-                    <div class="legend-item">
-                        <span class="line" style="background-color:${dataRute[h].warna}"></span>
-                        ${h}
-                    </div>`;
+                div.innerHTML += `<div class="legend-item"><span class="line" style="background:${dataRute[h].warna}"></span>${h}</div>`;
             });
+            div.innerHTML += `<div class="legend-item"><div class="dash"></div>Transisi</div>`;
             return div;
         };
         legend.addTo(map);
-
     </script>
 </body>
 </html>
