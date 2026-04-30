@@ -93,7 +93,7 @@
             buatRute(dataRute[hari].titik.map(t => t.coord), dataRute[hari].warna);
         });
 
-        // 2. Gambar Rute Transisi (Hitam Putus-putus)
+        // 2. Gambar Rute Transisi 
         const h1_akhir = dataRute["Hari 1"].titik[dataRute["Hari 1"].titik.length - 1].coord;
         const h2_awal = dataRute["Hari 2"].titik[0].coord;
         buatRute([h1_akhir, h2_awal], null, true);
