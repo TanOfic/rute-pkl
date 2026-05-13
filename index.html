@@ -35,9 +35,16 @@
     <script>
         const map = L.map('map').setView([-7.7, 110.5], 9);
 
+        // --- LAYER MAP ---
+        // Layer Satelit
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri'
+        }).addTo(map);
+
+        // Layer Label (Jalan & Nama Tempat)
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-            pane: 'overlayPane' // Menempatkan label di atas layer citra
-            }).addTo(map);
+            pane: 'overlayPane'
+        }).addTo(map);
 
         const dataRute = {
             "Hari 1": {
@@ -70,11 +77,10 @@
             }
         };
 
-        // Fungsi umum rute
         function buatRute(coords, warna, dash = false) {
             const styles = dash 
-                ? [{ color: 'black', opacity: 0.6, weight: 4, dashArray: '10, 10' }]
-                : [{ color: warna, opacity: 0.8, weight: 5 }];
+                ? [{ color: 'white', opacity: 0.8, weight: 4, dashArray: '10, 10' }] // Putih agar kontras dengan satelit
+                : [{ color: warna, opacity: 0.9, weight: 5 }];
 
             L.Routing.control({
                 waypoints: coords.map(c => L.latLng(c[0], c[1])),
@@ -85,7 +91,6 @@
             }).addTo(map);
         }
 
-        // 1. Gambar Marker & Rute Utama
         Object.keys(dataRute).forEach(hari => {
             dataRute[hari].titik.forEach(t => {
                 L.marker(t.coord).bindPopup(`<b>${hari}</b><br>${t.nama}`).addTo(map);
@@ -93,7 +98,6 @@
             buatRute(dataRute[hari].titik.map(t => t.coord), dataRute[hari].warna);
         });
 
-        // 2. Gambar Rute Transisi 
         const h1_akhir = dataRute["Hari 1"].titik[dataRute["Hari 1"].titik.length - 1].coord;
         const h2_awal = dataRute["Hari 2"].titik[0].coord;
         buatRute([h1_akhir, h2_awal], null, true);
@@ -102,7 +106,6 @@
         const h3_awal = dataRute["Hari 3"].titik[0].coord;
         buatRute([h2_akhir, h3_awal], null, true);
 
-        // 3. Legenda
         const legend = L.control({position: 'topright'});
         legend.onAdd = function() {
             const div = L.DomUtil.create('div', 'info-legend');
@@ -110,7 +113,7 @@
             Object.keys(dataRute).forEach(h => {
                 div.innerHTML += `<div class="legend-item"><span class="line" style="background:${dataRute[h].warna}"></span>${h}</div>`;
             });
-            div.innerHTML += `<div class="legend-item"><div class="dash"></div>Transisi</div>`;
+            div.innerHTML += `<div class="legend-item"><div class="dash" style="border-top-color:white"></div>Transisi</div>`;
             return div;
         };
         legend.addTo(map);
