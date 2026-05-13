@@ -35,9 +35,9 @@
     <script>
         const map = L.map('map').setView([-7.7, 110.5], 9);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap'
-        }).addTo(map);
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+            pane: 'overlayPane' // Menempatkan label di atas layer citra
+            }).addTo(map);
 
         const dataRute = {
             "Hari 1": {
